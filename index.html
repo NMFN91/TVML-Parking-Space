@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TVETMARA Ledang Parking</title>
+  
+  <!-- Load React, ReactDOM, and Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Load Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // Extract React hooks
+    const { useState, useRef, useEffect } = React;
+    
+    // Inline SVG Icon Components (Replaces external Lucide library to prevent loading errors)
+    const SvgIcon = ({ children, className = "", size = 24 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        {children}
+      </svg>
+    );
+    const Play = (p) => <SvgIcon {...p}><polygon points="6 3 20 12 6 21 6 3"></polygon></SvgIcon>;
+    const RotateCcw = (p) => <SvgIcon {...p}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></SvgIcon>;
+    const MapPin = (p) => <SvgIcon {...p}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></SvgIcon>;
+    const Navigation = (p) => <SvgIcon {...p}><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></SvgIcon>;
+    const Video = (p) => <SvgIcon {...p}><path d="m16 13 5.223 3.832a.5.5 0 0 0 .777-.416V7.584a.5.5 0 0 0-.777-.416L16 11V7.5a.5.5 0 0 0-.5-.5H3.5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h12a.5.5 0 0 0 .5-.5v-3.5Z"></path></SvgIcon>;
+    const CheckCircle2 = (p) => <SvgIcon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></SvgIcon>;
+    const Settings = (p) => <SvgIcon {...p}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></SvgIcon>;
+    const Save = (p) => <SvgIcon {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></SvgIcon>;
+    const ArrowLeft = (p) => <SvgIcon {...p}><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></SvgIcon>;
+    const Lock = (p) => <SvgIcon {...p}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></SvgIcon>;
+    const Key = (p) => <SvgIcon {...p}><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"></path><path d="m21 2-9.6 9.6"></path><circle cx="7.5" cy="15.5" r="5.5"></circle></SvgIcon>;
+    const X = (p) => <SvgIcon {...p}><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></SvgIcon>;
+
+    const DEFAULT_CONFIG = {
+      BASE_URL: "https://ozvkotfgreynspmvbafs.supabase.co/storage/v1/object/public/Parking%20videos/Masuk.mp4",
+      ROUTE_A: {
+        URL: "https://ozvkotfgreynspmvbafs.supabase.co/storage/v1/object/public/Parking%20videos/Parking%20A%20kecik.mp4",
+        NAME: "Parking A",
+        DESC: "Berhadapan Bangunan Pentadbiran TVML"
+      },
+      ROUTE_B: {
+        URL: "https://ozvkotfgreynspmvbafs.supabase.co/storage/v1/object/public/Parking%20videos/Parking%20A%20kecik.mp4", 
+        NAME: "Parking B",
+        DESC: "Bersebelahan Dewan Al Khindi"
+      },
+      ROUTE_C: {
+        URL: "https://ozvkotfgreynspmvbafs.supabase.co/storage/v1/object/public/Parking%20videos/Parking%20C.mp4",
+        NAME: "Parking C",
+        DESC: "Di hadapan Pusat Pelajar TVML"
+      },
+      INSTRUCTION_TEXT: "Di setiap Parking A,B dan C disediakan Buggy yang menjadi perantara dari kawasan parking ke lapangan Majlis.",
+      INSTRUCTION_IMAGE_URL: ""
+    };
+
+    const ADMIN_PIN = "330112";
+
+    function InteractiveVideoPlayer() {
+      const [config, setConfig] = useState(DEFAULT_CONFIG);
+      const [currentVideo, setCurrentVideo] = useState(config.BASE_URL);
+      const [playState, setPlayState] = useState('playing_base');
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [error, setError] = useState(null);
+      const [viewMode, setViewMode] = useState('player');
+      const [adminForm, setAdminForm] = useState(DEFAULT_CONFIG);
+      
+      const [showAuthModal, setShowAuthModal] = useState(false);
+      const [pinInput, setPinInput] = useState('');
+      const [authError, setAuthError] = useState(false);
+      
+      const videoRef = useRef(null);
+
+      useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const handlePlay = () => setIsPlaying(true);
+        const handlePause = () => setIsPlaying(false);
+        const handleError = (e) => {
+          const videoNode = videoRef.current;
+          const errorDetails = videoNode?.error ? `Code ${videoNode.error.code}: ${videoNode.error.message || 'Format not supported or network error'}` : "Network/CORS issue";
+          console.error("Video error details:", videoNode?.error, e);
+          setError(`Failed to load video (${errorDetails}).`);
+        };
+
+        video.addEventListener('play', handlePlay);
+        video.addEventListener('pause', handlePause);
+        video.addEventListener('error', handleError);
+
+        return () => {
+          video.removeEventListener('play', handlePlay);
+          video.removeEventListener('pause', handlePause);
+          video.removeEventListener('error', handleError);
+        };
+      }, [currentVideo]);
+
+      const handleTimeUpdate = () => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        if (playState === 'playing_base') {
+          const timeLeft = video.duration - video.currentTime;
+          if (video.duration > 0 && timeLeft <= 0.5) {
+            video.pause();
+            setPlayState('choosing');
+          }
+        }
+      };
+
+      const handleEnded = () => {
+        if (playState === 'playing_branch') {
+          setPlayState('finished');
+        }
+      };
+
+      const handleSelection = async (routeKey) => {
+        setCurrentVideo(config[routeKey].URL);
+        setPlayState('playing_branch');
+        
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.currentTime = 0;
+            videoRef.current.play().catch(e => console.error("Autoplay prevented:", e));
+          }
+        }, 100);
+      };
+
+      const handleRestart = () => {
+        setCurrentVideo(config.BASE_URL);
+        setPlayState('playing_base');
+        
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.currentTime = 0;
+            videoRef.current.play().catch(e => console.error("Autoplay prevented:", e));
+          }
+        }, 100);
+      };
+
+      const saveAdminSettings = () => {
+        setConfig(adminForm);
+        setCurrentVideo(adminForm.BASE_URL);
+        setPlayState('playing_base');
+        setViewMode('player');
+      };
+
+      const handleAuthSubmit = (e) => {
+        e.preventDefault();
+        if (pinInput === ADMIN_PIN) {
+          setViewMode('admin');
+          setShowAuthModal(false);
+          setPinInput('');
+          setAuthError(false);
+        } else {
+          setAuthError(true);
+          setPinInput('');
+        }
+      };
+
+      if (viewMode === 'admin') {
+        return (
+          <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 font-sans flex flex-col items-center justify-center">
+            <div className="max-w-3xl w-full bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-xl">
+              <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-100">
+                <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3 text-blue-900">
+                  <Settings className="text-red-600" />
+                  Video Config
+                </h1>
+                <button 
+                  onClick={() => setViewMode('player')}
+                  className="flex items-center gap-2 text-slate-500 hover:text-blue-900 transition-colors font-medium text-sm md:text-base"
+                >
+                  <ArrowLeft size={20} /> <span className="hidden sm:inline">Back to Player</span>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Base Video URL (Intro)</label>
+                  <input 
+                    type="text" 
+                    value={adminForm.BASE_URL}
+                    onChange={(e) => setAdminForm({...adminForm, BASE_URL: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-800 focus:outline-none focus:border-blue-900 focus:ring-1 focus:ring-blue-900 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Instruction Text (Below Video)</label>
+                  <textarea 
+                    value={adminForm.INSTRUCTION_TEXT}
+                    onChange={(e) => setAdminForm({...adminForm, INSTRUCTION_TEXT: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-800 focus:outline-none focus:border-blue-900 focus:ring-1 focus:ring-blue-900 transition-all resize-none"
+                    rows="2"
+                    placeholder="Leave blank to hide this text box..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Instruction Image URL (Below Text)</label>
+                  <input 
+                    type="text" 
+                    value={adminForm.INSTRUCTION_IMAGE_URL || ''}
+                    onChange={(e) => setAdminForm({...adminForm, INSTRUCTION_IMAGE_URL: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-800 focus:outline-none focus:border-blue-900 focus:ring-1 focus:ring-blue-900 transition-all"
+                    placeholder="Paste image URL here (Leave blank to hide)"
+                  />
+                </div>
+                
+                <div className="p-5 bg-white border border-slate-200 shadow-sm rounded-xl space-y-4 border-l-4 border-l-blue-900">
+                  <h3 className="text-lg font-bold text-blue-900">Route A Settings</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-600 mb-2">Route Name</label>
+                      <input type="text" value={adminForm.ROUTE_A.NAME} onChange={(e) => setAdminForm({...adminForm, ROUTE_A: {...adminForm.ROUTE_A, NAME: e.target.value}})} className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-800 focus:outline-none focus:border-blue-900 transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-600 mb-2">Description</label>
+                      <input type="text" value={adminForm.ROUTE_A.DESC} onChange={(e) => setAdminForm({...adminForm, ROUTE_A: {...adminForm.ROUTE_A, DESC: e.target.value}})} className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-800 focus:outline-none focus:border-blue-900 transition-all" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Video URL</label>
+                    <input type="text" value={adminForm.ROUTE_A.URL} onChange={(e) => setAdminForm({...adminForm, ROUTE_A: {...adminForm.ROUTE_A, URL: e.target.value}})} className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-800 focus:outline-none focus:border-blue-900 transition-all" />
+                  </div>
+                </div>
+
+                <div className="p-5 bg-white border border-slate-200 shadow-sm rounded-xl space-y-4 border-l-4 border-l-red-600">
+                  <h3 className="text-lg font-bold text-red-600">Route B Settings</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-600 mb-2">Route Name</label>
+                      <input type="text" value={adminForm.ROUTE_B.NAME} onChange={(e) => setAdminForm({...adminForm, ROUTE_B: {...adminForm.ROUTE_B, NAME: e.target.value}})} className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-800 focus:outline-none focus:border-red-600 transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-600 mb-2">Description</label>
+                      <input type="text" value={adminForm.ROUTE_B.DESC} onChange={(e) => setAdminForm({...adminForm, ROUTE_B: {...adminForm.ROUTE_B, DESC: e.target.value}})} className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-800 focus:outline-none focus:border-red-600 transition-all" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Video URL</label>
+                    <input type="text" value={adminForm.ROUTE_B.URL} onChange={(e) => setAdminForm({...adminForm, ROUTE_B: {...adminForm.ROUTE_B, URL: e.target.value}})} className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-800 focus:outline-none focus:border-red-600 transition-all" />
+                  </div>
+                </div>
+
+                <div className="p-5 bg-white border border-slate-200 shadow-sm rounded-xl space-y-4 border-l-4 border-l-slate-800">
+                  <h3 className="text-lg font-bold text-slate-800">Route C Settings</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-600 mb-2">Route Name</label>
+                      <input type="text" value={adminForm.ROUTE_C.NAME} onChange={(e) => setAdminForm({...adminForm, ROUTE_C: {...adminForm.ROUTE_C, NAME: e.target.value}})} className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-800 focus:outline-none focus:border-slate-800 transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-600 mb-2">Description</label>
+                      <input type="text" value={adminForm.ROUTE_C.DESC} onChange={(e) => setAdminForm({...adminForm, ROUTE_C: {...adminForm.ROUTE_C, DESC: e.target.value}})} className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-800 focus:outline-none focus:border-slate-800 transition-all" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Video URL</label>
+                    <input type="text" value={adminForm.ROUTE_C.URL} onChange={(e) => setAdminForm({...adminForm, ROUTE_C: {...adminForm.ROUTE_C, URL: e.target.value}})} className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-800 focus:outline-none focus:border-slate-800 transition-all" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 flex justify-end">
+                <button 
+                  onClick={saveAdminSettings}
+                  className="flex items-center justify-center w-full md:w-auto gap-2 bg-blue-900 hover:bg-blue-800 text-white px-8 py-4 md:py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 text-lg md:text-base"
+                >
+                  <Save size={20} /> Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen bg-slate-50 text-slate-800 p-2 sm:p-4 md:p-8 font-sans flex flex-col items-center justify-center relative overflow-hidden">
+          
+          <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-900/5 rounded-full blur-3xl pointer-events-none hidden md:block"></div>
+          <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600/5 rounded-full blur-3xl pointer-events-none hidden md:block"></div>
+
+          <div className="max-w-6xl w-full relative z-10 flex flex-col h-full md:h-auto">
+            
+            <div className="mb-4 md:mb-8 flex flex-col items-center justify-center bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 text-center relative z-20">
+              
+              <div className="w-full flex justify-center mb-3 md:mb-6">
+                 <img 
+                   src="https://iili.io/nVAPYhJ.png" 
+                   alt="TVETMARA Ledang Logo" 
+                   className="h-16 md:h-24 w-auto object-contain transition-all duration-300"
+                   onError={(e) => e.target.style.display = 'none'}
+                 />
+              </div>
+
+              <div className="flex flex-col items-center w-full px-2">
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-black flex items-center justify-center gap-2 md:gap-3 tracking-tight text-blue-900 leading-tight">
+                  <div onClick={() => setShowAuthModal(true)} className="cursor-default">
+                    <Navigation className="text-red-600 flex-shrink-0 w-6 h-6 md:w-8 md:h-8 opacity-0 hover:opacity-10 transition-opacity" /> 
+                  </div>
+                  <span className="flex-1">PARKING RASMI TVETMARA LEDANG</span>
+                  <div className="w-6 md:w-8"></div>
+                </h1>
+                <div className="h-1 w-16 md:w-24 bg-red-600 mt-2 md:mt-4 rounded-full"></div>
+              </div>
+            </div>
+
+            {}
+            <div className="relative aspect-video bg-black rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl border-2 md:border-4 border-white ring-1 ring-slate-200 w-full">
+              
+              {error ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-900 z-20 p-4 text-center">
+                  <p className="text-red-400 flex flex-col items-center gap-3 font-medium text-sm md:text-base">
+                    <Video size={32} /> {error}
+                  </p>
+                </div>
+              ) : (
+                <video 
+                  ref={videoRef}
+                  src={currentVideo} 
+                  onTimeUpdate={handleTimeUpdate}
+                  onEnded={handleEnded}
+                  className="w-full h-full object-cover"
+                  controls={playState !== 'choosing' && playState !== 'finished'}
+                  autoPlay
+                  playsInline
+                />
+              )}
+
+              {playState === 'choosing' && (
+                <div className="fixed inset-0 md:absolute md:inset-0 bg-slate-50/98 md:bg-white/95 backdrop-blur-xl md:backdrop-blur-md flex flex-col items-center justify-center z-[100] md:z-10 transition-opacity duration-500 md:border-t-8 border-blue-900 overflow-y-auto px-4 py-8 md:p-0">
+                  
+                  <div className="w-full max-w-4xl flex flex-col items-center justify-center min-h-full md:min-h-0 py-8 md:py-0">
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-8 md:mb-10 text-blue-900 tracking-tight text-center px-2">
+                      PILIH LALUAN PARKING ANDA:
+                    </h2>
+                    
+                    <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full px-2 md:px-6">
+                      
+                      <button 
+                        onClick={() => handleSelection('ROUTE_A')}
+                        className="flex-1 group relative bg-white hover:bg-slate-50 text-slate-800 p-4 sm:p-5 md:p-8 rounded-2xl overflow-hidden transition-all duration-300 active:scale-95 shadow-[0_4px_20px_rgb(0,0,0,0.06)] md:shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200 hover:border-blue-900 flex flex-row md:flex-col items-center md:justify-center gap-4 md:gap-4 text-left md:text-center"
+                      >
+                        <div className="absolute top-0 left-0 w-2 h-full md:w-full md:h-2 bg-blue-900"></div>
+                        <MapPin className="w-10 h-10 md:w-12 md:h-12 text-blue-900 flex-shrink-0 opacity-90 group-hover:scale-110 transition-transform ml-2 md:ml-0" />
+                        <div className="flex flex-col flex-1 pr-2 md:pr-0">
+                          <span className="text-xl md:text-2xl font-black leading-tight text-slate-800">{config.ROUTE_A.NAME}</span>
+                          <span className="text-sm md:text-sm font-medium text-slate-500 mt-1">{config.ROUTE_A.DESC}</span>
+                        </div>
+                      </button>
+
+                      <button 
+                        onClick={() => handleSelection('ROUTE_B')}
+                        className="flex-1 group relative bg-white hover:bg-slate-50 text-slate-800 p-4 sm:p-5 md:p-8 rounded-2xl overflow-hidden transition-all duration-300 active:scale-95 shadow-[0_4px_20px_rgb(0,0,0,0.06)] md:shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200 hover:border-red-600 flex flex-row md:flex-col items-center md:justify-center gap-4 md:gap-4 text-left md:text-center"
+                      >
+                        <div className="absolute top-0 left-0 w-2 h-full md:w-full md:h-2 bg-red-600"></div>
+                        <MapPin className="w-10 h-10 md:w-12 md:h-12 text-red-600 flex-shrink-0 opacity-90 group-hover:scale-110 transition-transform ml-2 md:ml-0" />
+                        <div className="flex flex-col flex-1 pr-2 md:pr-0">
+                          <span className="text-xl md:text-2xl font-black leading-tight text-slate-800">{config.ROUTE_B.NAME}</span>
+                          <span className="text-sm md:text-sm font-medium text-slate-500 mt-1">{config.ROUTE_B.DESC}</span>
+                        </div>
+                      </button>
+
+                      <button 
+                        onClick={() => handleSelection('ROUTE_C')}
+                        className="flex-1 group relative bg-white hover:bg-slate-50 text-slate-800 p-4 sm:p-5 md:p-8 rounded-2xl overflow-hidden transition-all duration-300 active:scale-95 shadow-[0_4px_20px_rgb(0,0,0,0.06)] md:shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200 hover:border-slate-800 flex flex-row md:flex-col items-center md:justify-center gap-4 md:gap-4 text-left md:text-center"
+                      >
+                        <div className="absolute top-0 left-0 w-2 h-full md:w-full md:h-2 bg-slate-800"></div>
+                        <MapPin className="w-10 h-10 md:w-12 md:h-12 text-slate-800 flex-shrink-0 opacity-90 group-hover:scale-110 transition-transform ml-2 md:ml-0" />
+                        <div className="flex flex-col flex-1 pr-2 md:pr-0">
+                          <span className="text-xl md:text-2xl font-black leading-tight text-slate-800">{config.ROUTE_C.NAME}</span>
+                          <span className="text-sm md:text-sm font-medium text-slate-500 mt-1">{config.ROUTE_C.DESC}</span>
+                        </div>
+                      </button>
+                    </div>
+                    
+                    <div className="mt-10 md:absolute md:bottom-10 flex gap-2">
+                      <div className="w-12 md:w-16 h-1.5 md:h-2 rounded-full bg-blue-900"></div>
+                      <div className="w-12 md:w-16 h-1.5 md:h-2 rounded-full bg-red-600"></div>
+                      <div className="w-12 md:w-16 h-1.5 md:h-2 rounded-full bg-slate-300 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {}
+              {playState === 'finished' && (
+                <div className="fixed inset-0 md:absolute md:inset-0 z-[100] md:z-10 overflow-hidden flex flex-col items-center justify-center p-6 bg-slate-50/98 md:bg-white/95 backdrop-blur-xl md:backdrop-blur-md">
+                  <div className="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-blue-900 rounded-bl-full opacity-5 pointer-events-none"></div>
+                  <div className="absolute bottom-0 left-0 w-48 md:w-64 h-48 md:h-64 bg-red-600 rounded-tr-full opacity-5 pointer-events-none"></div>
+                  
+                  <div className="relative z-20 flex flex-col items-center animate-in zoom-in duration-700 spring-bounce w-full max-w-2xl text-center mt-[-10%] md:mt-0">
+                    <div className="bg-white p-4 md:p-6 rounded-full border-[3px] md:border-4 border-blue-900 mb-6 md:mb-8 shadow-xl shadow-blue-900/20">
+                      <CheckCircle2 className="w-16 h-16 md:w-24 md:h-24 text-blue-900" />
+                    </div>
+                    
+                    <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-3 md:mb-4 text-transparent bg-clip-text bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 tracking-tight uppercase leading-tight px-2">
+                      TAHNIAH ANDA TELAH SAMPAI
+                    </h2>
+                    
+                    <p className="text-xl md:text-3xl font-black mb-10 md:mb-12 text-red-600 tracking-widest uppercase">
+                      SELAMAT DATANG KE<br className="sm:hidden" /> TVETMARA LEDANG
+                    </p>
+                    
+                    <button 
+                      onClick={handleRestart}
+                      className="group relative flex items-center justify-center gap-3 bg-gradient-to-r from-blue-900 to-blue-800 text-white w-full sm:w-auto px-8 py-5 md:px-10 md:py-5 rounded-2xl md:rounded-full font-black text-lg md:text-xl transition-all duration-300 active:scale-95 shadow-2xl shadow-blue-900/30 border-2 md:border-4 border-white/50 uppercase tracking-wider overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                      <RotateCcw size={24} className="group-hover:-rotate-180 transition-transform duration-500 ease-out relative z-10 md:w-[28px] md:h-[28px]" /> 
+                      <span className="relative z-10 whitespace-nowrap">CUBA LALUAN LAIN</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {!isPlaying && playState !== 'choosing' && playState !== 'finished' && (
+                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-0">
+                   <div className="w-16 h-16 md:w-20 md:h-20 bg-blue-900/80 backdrop-blur-sm rounded-full flex items-center justify-center border-[3px] md:border-4 border-white shadow-xl">
+                     <Play className="w-6 h-6 md:w-8 md:h-8 text-white ml-1 md:ml-1.5" />
+                   </div>
+                 </div>
+              )}
+            </div>
+
+            {}
+            {(config.INSTRUCTION_TEXT?.trim() !== "" || config.INSTRUCTION_IMAGE_URL?.trim() !== "") && (
+              <div className="mt-4 md:mt-6 w-full bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-200 relative z-20 border-l-4 border-l-red-600 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                 {config.INSTRUCTION_TEXT?.trim() !== "" && (
+                   <p className="text-slate-700 text-sm md:text-base font-semibold text-left leading-relaxed w-full">
+                     {config.INSTRUCTION_TEXT}
+                   </p>
+                 )}
+                 
+                 {config.INSTRUCTION_IMAGE_URL?.trim() !== "" && (
+                   <div className="w-full flex justify-center mt-2">
+                     <img 
+                       src={config.INSTRUCTION_IMAGE_URL} 
+                       alt="Instruction Guide" 
+                       className="max-w-full max-h-64 sm:max-h-96 object-contain rounded-xl border border-slate-100 shadow-sm"
+                       onError={(e) => e.target.style.display = 'none'}
+                     />
+                   </div>
+                 )}
+              </div>
+            )}
+
+            {}
+            {showAuthModal && (
+              <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl md:text-2xl font-bold text-blue-900 flex items-center gap-2">
+                      <Lock className="text-red-600 w-5 h-5 md:w-6 md:h-6" /> Admin Access
+                    </h2>
+                    <button 
+                      onClick={() => { setShowAuthModal(false); setAuthError(false); }}
+                      className="text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full p-2 transition-colors"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                  
+                  <form onSubmit={handleAuthSubmit}>
+                    <div className="mb-6">
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Enter PIN Code</label>
+                      <div className="relative">
+                        <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                        <input 
+                          type="password" 
+                          value={pinInput}
+                          onChange={(e) => setPinInput(e.target.value)}
+                          placeholder="••••"
+                          className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl pl-12 pr-4 py-4 text-slate-900 focus:outline-none focus:border-blue-900 focus:ring-4 focus:ring-blue-900/10 transition-all text-center tracking-[0.5em] text-2xl font-black"
+                          autoFocus
+                        />
+                      </div>
+                      {authError && <p className="text-red-600 text-sm mt-3 font-bold bg-red-50 p-3 rounded-lg border border-red-100 animate-in slide-in-from-top-1">Incorrect PIN. Please try again.</p>}
+                    </div>
+                    
+                    <button 
+                      type="submit"
+                      className="w-full bg-blue-900 hover:bg-blue-800 text-white font-black text-lg py-4 rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-900/20"
+                    >
+                      UNLOCK
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<InteractiveVideoPlayer />);
+  </script>
+</body>
+</html>
